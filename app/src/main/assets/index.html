@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Echo Architect</title>
+    <script src="./lib/tailwind.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020204;
+            font-family: 'Inter', sans-serif;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Fallback positioning & visibility rules in case Tailwind CDN is delayed or offline */
+        .opacity-0 { opacity: 0; }
+        .hidden-ui { display: none !important; }
+        .absolute { position: absolute; }
+        .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .grid { display: grid; }
+
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .interactive { pointer-events: auto; }
+
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
+        }
+
+        h1, h2, h3, .mono { font-family: 'Space Mono', monospace; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #0088cc 0%, #00aaff 100%);
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .btn-primary:hover {
+            box-shadow: 0 0 25px rgba(0, 170, 255, 0.6);
+            transform: translateY(-2px);
+        }
+        .btn-primary:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+        .btn-secondary:active { transform: scale(0.95); }
+
+        .btn-danger {
+            background: rgba(255, 50, 50, 0.1);
+            border: 1px solid rgba(255, 50, 50, 0.4);
+            color: #ff8888;
+            transition: all 0.2s;
+        }
+        .btn-danger:hover { background: rgba(255, 50, 50, 0.2); }
+        .btn-danger:active { transform: scale(0.95); }
+
+        .dpad-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 255, 255, 0.08);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: rgba(0, 255, 255, 0.9);
+            transition: all 0.1s;
+        }
+        .dpad-btn:active {
+            background: rgba(0, 255, 255, 0.4);
+            color: #fff;
+            transform: scale(0.9);
+        }
+
+        #pulse-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,255,0.2) 0%, rgba(0,255,255,0.05) 100%);
+            border: 2px solid rgba(0, 255, 255, 0.6);
+            color: #0ff;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transition: all 0.15s;
+        }
+        #pulse-btn:active, #pulse-btn.active-pulse {
+            background: rgba(0, 255, 255, 0.6);
+            box-shadow: 0 0 40px rgba(0, 255, 255, 1);
+            transform: scale(0.85);
+            color: #fff;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(255,255,255,0.1);
+            transition: .3s;
+            border-radius: 22px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px; width: 14px;
+            left: 3px; bottom: 3px;
+            background-color: #888;
+            transition: .3s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: rgba(0, 255, 255, 0.3); border-color: #0ff; }
+        input:checked + .slider:before { transform: translateX(22px); background-color: #0ff; box-shadow: 0 0 8px #0ff; }
+
+        .modal-overlay {
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(5px);
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter { opacity: 0; transform: scale(0.95) translateY(10px); pointer-events: none; }
+        .fade-enter-active { opacity: 1; transform: scale(1) translateY(0); transition: opacity 300ms, transform 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; }
+        .fade-exit { opacity: 1; transform: scale(1) translateY(0); pointer-events: none; }
+        .fade-exit-active { opacity: 0; transform: scale(0.95) translateY(10px); transition: opacity 200ms, transform 200ms; }
+        .hidden-ui { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+
+<div id="ui-layer">
+    <!-- Heads Up Display -->
+    <div id="hud" class="w-full flex justify-between items-start p-4 md:p-6 transition-opacity duration-500 opacity-0">
+        <div class="glass-panel px-4 py-2 rounded-lg mono text-cyan-400 text-sm md:text-base">
+            <div>SECTOR <span id="hud-level" class="text-white font-bold">1/10</span></div>
+            <div>SCORE: <span id="hud-score" class="text-white font-bold">0</span></div>
+        </div>
+
+        <div class="flex gap-2">
+            <div class="glass-panel px-4 py-2 rounded-lg mono text-cyan-400 text-sm md:text-base text-right">
+                <div>PULSES: <span id="hud-pulses" class="text-white font-bold">0</span></div>
+            </div>
+            <button id="btn-pause" class="interactive glass-panel w-10 h-10 md:w-12 md:h-12 rounded-lg flex justify-center items-center text-cyan-400 hover:text-white hover:bg-cyan-900 transition-colors">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- In-Game Hints -->
+    <div id="in-game-tutorial" class="absolute top-24 w-full flex justify-center opacity-0 transition-opacity duration-500 pointer-events-none">
+        <div class="glass-panel px-6 py-2 rounded-full mono text-cyan-300 text-sm border-cyan-500/50 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+            <span id="tutorial-text" class="tracking-wider">PRESS PULSE TO REVEAL</span>
+        </div>
+    </div>
+
+    <div id="touch-controls" class="interactive w-full pb-8 px-6 flex justify-between items-end md:hidden transition-opacity duration-500 opacity-0">
+        <!-- Directional Pad -->
+        <div class="grid grid-cols-3 gap-2">
+            <div></div>
+            <div class="dpad-btn" id="btn-up">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+            </div>
+            <div></div>
+            <div class="dpad-btn" id="btn-left">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            </div>
+            <div class="dpad-btn" id="btn-down">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+            </div>
+            <div class="dpad-btn" id="btn-right">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+        </div>
+        <!-- Action Button -->
+        <div class="interactive flex flex-col justify-center items-center" id="pulse-btn">
+            <span class="text-xs mono tracking-widest font-bold">PULSE</span>
+        </div>
+    </div>
+
+    <!-- Desktop Keyboard Hint -->
+    <div id="desktop-hint" class="hidden md:flex absolute bottom-8 w-full justify-center opacity-0 transition-opacity duration-500">
+        <div class="glass-panel px-6 py-3 rounded-full mono text-cyan-400 text-sm flex gap-8">
+            <span><span class="text-white font-bold">W A S D</span> OR <span class="text-white font-bold">ARROWS</span> TO MOVE</span>
+            <span><span class="text-white font-bold">SPACE</span> TO PULSE</span>
+        </div>
+    </div>
+
+    <div id="modals" class="interactive absolute inset-0 flex items-center justify-center pointer-events-none modal-overlay">
+
+        <!-- Main Menu Modal -->
+        <div id="modal-menu" class="glass-panel p-8 md:p-12 rounded-2xl max-w-lg w-[90%] text-center pointer-events-auto transition-all duration-300">
+            <h1 class="text-5xl md:text-6xl text-white font-bold mb-2 tracking-widest" style="text-shadow: 0 0 30px rgba(0,255,255,0.6);">ECHO</h1>
+            <h2 class="text-xl md:text-2xl text-cyan-400 mb-8 tracking-widest">ARCHITECT</h2>
+
+            <p class="text-gray-300 mb-6 text-sm md:text-base leading-relaxed">
+                Navigate the shadowed labyrinth. Emit light pulses to briefly reveal the geometry.
+                <strong class="text-cyan-300">Memorize the path</strong> before it fades.
+            </p>
+
+            <div class="bg-black/50 p-4 rounded-lg mb-8 text-left text-xs md:text-sm text-gray-400 font-mono border border-cyan-900/50">
+                <p class="mb-2"><span class="text-cyan-500">SYSTEM:</span> Spatial working memory mapping initialized.</p>
+                <p><span class="text-cyan-500">OBJECTIVE:</span> Reach the purple beacon. Conserve pulses for higher scores.</p>
+            </div>
+
+            <button id="btn-start" class="btn-primary w-full py-4 text-white font-bold rounded-lg tracking-widest mono text-lg">
+                INITIALIZE CAMPAIGN
+            </button>
+        </div>
+
+        <div id="modal-pause" class="glass-panel p-8 rounded-2xl max-w-sm w-[90%] text-center pointer-events-auto hidden-ui transition-all duration-300">
+            <h2 class="text-2xl text-white font-bold mb-6 tracking-widest">SYSTEM PAUSED</h2>
+
+            <div class="space-y-3 mb-8 text-left mono text-sm">
+                <div class="flex justify-between items-center text-gray-300 bg-black/40 p-3 rounded-lg border border-white/5">
+                    <span>AUDIO SYNTHESIS</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-audio" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="flex justify-between items-center text-gray-300 bg-black/40 p-3 rounded-lg border border-white/5">
+                    <span>BLOOM FX (GRAPHICS)</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="toggle-bloom" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3">
+                <button id="btn-resume" class="btn-primary w-full py-3 text-white font-bold rounded-lg tracking-widest mono text-sm">
+                    RESUME
+                </button>
+                <button id="btn-restart-level" class="btn-secondary w-full py-3 text-white font-bold rounded-lg tracking-widest mono text-sm">
+                    RESTART LEVEL
+                </button>
+                <button id="btn-quit" class="btn-danger w-full py-3 font-bold rounded-lg tracking-widest mono text-sm">
+                    ABORT CAMPAIGN
+                </button>
+            </div>
+        </div>
+
+        <div id="modal-level-complete" class="glass-panel p-8 rounded-2xl max-w-sm w-[90%] text-center pointer-events-auto hidden-ui transition-all duration-300 border-t-4 border-t-cyan-400">
+            <h2 class="text-2xl text-white font-bold mb-2 tracking-widest">SECTOR CLEARED</h2>
+            <div class="my-6 space-y-3 mono text-sm bg-black/40 p-4 rounded-lg border border-cyan-900/30">
+                <div class="flex justify-between text-gray-400"><span>Pulses Used:</span> <span id="summary-pulses" class="text-white">0</span></div>
+                <div class="flex justify-between text-gray-400"><span>Memory Bonus:</span> <span id="summary-bonus" class="text-cyan-400">+0</span></div>
+                <div class="h-px bg-cyan-900/50 my-2"></div>
+                <div class="flex justify-between text-white font-bold text-lg"><span>Total Score:</span> <span id="summary-score">0</span></div>
+            </div>
+            <button id="btn-next-level" class="btn-primary w-full py-4 mt-2 text-white font-bold rounded-lg tracking-widest mono text-lg shadow-[0_0_15px_rgba(0,255,255,0.3)]">
+                PROCEED DEEPER
+            </button>
+        </div>
+
+        <div id="modal-victory" class="glass-panel p-8 md:p-10 rounded-2xl max-w-md w-[90%] text-center pointer-events-auto hidden-ui transition-all duration-300 border-t-4 border-t-purple-500">
+            <h2 class="text-3xl md:text-4xl text-white font-bold mb-2 tracking-widest" style="text-shadow: 0 0 20px rgba(170,0,255,0.6);">ARCHITECT</h2>
+            <p class="text-purple-400 mono text-sm mb-6 tracking-widest">ALL SECTORS MAPPED</p>
+
+            <div class="my-6 space-y-4 mono text-sm">
+                <p class="text-gray-300 text-sm leading-relaxed mb-4">Your spatial processing and working memory are exceptional. The labyrinth is conquered.</p>
+
+                <div class="bg-black/60 p-6 rounded-lg border border-purple-500/30 shadow-[inset_0_0_20px_rgba(170,0,255,0.1)]">
+                    <div class="text-gray-400 mb-1">FINAL SCORE</div>
+                    <div id="final-score" class="text-4xl text-white font-bold text-purple-300" style="text-shadow: 0 0 10px rgba(170,0,255,0.5);">0</div>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-3 mt-6">
+                <button id="btn-play-again" class="btn-primary w-full py-4 text-white font-bold rounded-lg tracking-widest mono text-lg bg-gradient-to-r from-purple-600 to-cyan-600 border-none shadow-[0_0_20px_rgba(170,0,255,0.4)]">
+                    PLAY AGAIN
+                </button>
+                <button id="btn-victory-menu" class="btn-secondary w-full py-3 text-white font-bold rounded-lg tracking-widest mono text-sm">
+                    MAIN MENU
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script type="importmap">
+    {
+        "imports": {
+            "three": "./lib/three/three.module.js",
+            "three/addons/": "./lib/three/addons/"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+    // --- Core State Machine ---
+    const GameState = { MENU: 0, PLAYING: 1, TRANSITION: 2, PAUSED: 3, GAME_OVER: 4 };
+    const MAX_LEVELS = 10;
+
+    const state = {
+        current: GameState.MENU,
+        level: 1,
+        score: 0,
+        pulsesThisLevel: 0,
+        gridWidth: 5,
+        gridHeight: 5,
+        maze: [],
+        playerPos: { x: 0, y: 0 },
+        targetPos: { x: 0, y: 0 },
+        isMoving: false,
+        moveProgress: 0,
+        moveSpeed: 8.0, // Snappier movement
+        pulses: [],
+        lastTime: 0,
+        settings: { audio: true, bloom: true }
+    };
+
+    // --- Gameplay Tuning ---
+    const config = {
+        cellSize: 2,
+        wallHeight: 2.5,
+        fadeDelayBase: 4.0, // Increased: Walls stay lit much longer
+        pulseSpeed: 25.0,   // Increased: Pulse wave travels faster
+        pulseRingWidth: 3.5 // Thicker pulse band
+    };
+
+    let audioCtx = null;
+    function initAudio() {
+        if(!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playSound(type) {
+        if (!state.settings.audio) return;
+        if (!audioCtx) initAudio();
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'pulse') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, now);
+            osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.3, now + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+            osc.start(now);
+            osc.stop(now + 1.5);
+        } else if (type === 'bump') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 0.1);
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.2, now + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+            osc.start(now);
+            osc.stop(now + 0.2);
+        } else if (type === 'win') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+            osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+            osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.2, now + 0.1);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 2.0);
+            osc.start(now);
+            osc.stop(now + 2.0);
+        } else if (type === 'move') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(0.05, now + 0.02);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        }
+    }
+
+    const canvas = document.getElementById('game-canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x020204);
+    scene.fog = new THREE.FogExp2(0x020204, 0.015); // Less aggressive fog
+
+    // Top-down Perspective Camera
+    // Positioned high up and slightly back, looking forward/down
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const CAM_HEIGHT = 20;
+    const CAM_Z_OFFSET = 8;
+
+    // Post-processing (Bloom)
+    const renderScene = new RenderPass(scene, camera);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 2.0, 0.5, 0.1);
+    bloomPass.tintColor = new THREE.Color(0x00ffff);
+
+    const composer = new EffectComposer(renderer);
+    composer.addPass(renderScene);
+    composer.addPass(bloomPass);
+
+    const materials = {
+        wall: new THREE.MeshStandardMaterial({
+            color: 0x050510,
+            emissive: 0x00e5ff,
+            emissiveIntensity: 0.0,
+            transparent: true,
+            opacity: 0.0,
+            roughness: 0.2,
+            metalness: 0.8
+        }),
+        floor: new THREE.MeshStandardMaterial({ color: 0x010102, roughness: 0.9 }),
+        grid: new THREE.LineBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.05 }), // Holographic floor grid
+        player: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2.0 }),
+        goal: new THREE.MeshStandardMaterial({ color: 0xcc00ff, emissive: 0xcc00ff, emissiveIntensity: 2.5 }),
+        trail: new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.4 })
+    };
+
+    const geometries = {
+        wall: new THREE.BoxGeometry(config.cellSize * 0.95, config.wallHeight, config.cellSize * 0.95),
+        player: new THREE.SphereGeometry(config.cellSize * 0.35, 16, 16),
+        goal: new THREE.OctahedronGeometry(config.cellSize * 0.5),
+        trail: new THREE.PlaneGeometry(config.cellSize * 0.25, config.cellSize * 0.25)
+    };
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.05));
+
+    // Floor Plane
+    const floorMesh = new THREE.Mesh(new THREE.PlaneGeometry(1000, 1000), materials.floor);
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.position.y = -config.wallHeight / 2;
+    scene.add(floorMesh);
+
+    // Floor Grid Helper (Makes spatial relation easier)
+    const gridHelper = new THREE.GridHelper(1000, 500, 0x00ffff, 0x00ffff);
+    gridHelper.position.y = -config.wallHeight / 2 + 0.01;
+    gridHelper.material.opacity = 0.03;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+
+    // Game Entities
+    let playerMesh = new THREE.Mesh(geometries.player, materials.player);
+    scene.add(playerMesh);
+
+    const playerLight = new THREE.PointLight(0x00ffff, 1.0, config.cellSize * 3);
+    playerLight.position.y = 1;
+    playerMesh.add(playerLight);
+
+    let goalMesh = new THREE.Mesh(geometries.goal, materials.goal);
+    scene.add(goalMesh);
+    const goalLight = new THREE.PointLight(0xcc00ff, 1.5, config.cellSize * 5);
+    goalLight.position.y = 1;
+    goalMesh.add(goalLight);
+
+    let wallGroup = new THREE.Group();
+    scene.add(wallGroup);
+    let walls = [];
+    let trails = [];
+
+    function generateMaze(width, height) {
+        // Guarantee odd dimensions for proper DFS generation
+        if (width % 2 === 0) width++;
+        if (height % 2 === 0) height++;
+
+        const grid = Array(height).fill(null).map(() => Array(width).fill(1)); // 1 = wall, 0 = path
+
+        // Start DFS at 1,1
+        const stack = [{x: 1, y: 1}];
+        grid[1][1] = 0;
+
+        const dirs = [[0, -2], [0, 2], [-2, 0], [2, 0]];
+
+        while(stack.length > 0) {
+            const current = stack[stack.length - 1];
+            const neighbors = [];
+
+            for(let [dx, dy] of dirs) {
+                const nx = current.x + dx;
+                const ny = current.y + dy;
+                if(nx > 0 && nx < width-1 && ny > 0 && ny < height-1 && grid[ny][nx] === 1) {
+                    neighbors.push({x: nx, y: ny, dx: dx/2, dy: dy/2});
+                }
+            }
+
+            if(neighbors.length > 0) {
+                const next = neighbors[Math.floor(Math.random() * neighbors.length)];
+                grid[current.y + next.dy][current.x + next.dx] = 0; // Break wall
+                grid[next.y][next.x] = 0; // Break cell
+                stack.push(next);
+            } else {
+                stack.pop();
+            }
+        }
+
+        // Remove some walls to create loops (makes it a bit easier/more varied)
+        const loopChance = 0.1 + (state.level * 0.01);
+        for(let y = 1; y < height - 1; y++) {
+            for(let x = 1; x < width - 1; x++) {
+                if (grid[y][x] === 1) {
+                    let paths = 0;
+                    if (grid[y-1][x] === 0) paths++;
+                    if (grid[y+1][x] === 0) paths++;
+                    if (grid[y][x-1] === 0) paths++;
+                    if (grid[y][x+1] === 0) paths++;
+                    if (paths >= 2 && Math.random() < loopChance) {
+                        grid[y][x] = 0;
+                    }
+                }
+            }
+        }
+
+        // Set Start and End exactly in corners
+        grid[1][1] = 2; // 2 = Start
+        grid[height-2][width-2] = 3; // 3 = End
+
+        return { grid, finalWidth: width, finalHeight: height };
+    }
+
+    function getWorldPos(mapX, mapY) {
+        const offsetX = (state.gridWidth * config.cellSize) / 2;
+        const offsetZ = (state.gridHeight * config.cellSize) / 2;
+        return {
+            x: mapX * config.cellSize - offsetX,
+            z: mapY * config.cellSize - offsetZ
+        };
+    }
+
+    function initLevel(level) {
+        // Cleanup previous level
+        while(wallGroup.children.length > 0){ wallGroup.remove(wallGroup.children[0]); }
+        walls = [];
+        trails.forEach(t => scene.remove(t.mesh));
+        trails = [];
+        state.pulses = [];
+        state.pulsesThisLevel = 0;
+        updateHUD();
+
+        // Progressive scaling (Starts at 7x7 logic, grows by 2 per level)
+        const baseSize = 5 + (level * 2);
+        const mazeData = generateMaze(baseSize, baseSize);
+
+        state.maze = mazeData.grid;
+        state.gridWidth = mazeData.finalWidth;
+        state.gridHeight = mazeData.finalHeight;
+
+        for(let y = 0; y < state.gridHeight; y++) {
+            for(let x = 0; x < state.gridWidth; x++) {
+                const type = state.maze[y][x];
+                const pos = getWorldPos(x, y);
+
+                if (type === 1) {
+                    const mat = materials.wall.clone();
+                    const mesh = new THREE.Mesh(geometries.wall, mat);
+                    mesh.position.set(pos.x, 0, pos.z);
+                    wallGroup.add(mesh);
+                    walls.push({ mesh: mesh, material: mat, lastLit: 0 });
+                } else if (type === 2) {
+                    state.playerPos = {x, y};
+                    state.targetPos = {x, y};
+                    playerMesh.position.set(pos.x, 0, pos.z);
+                } else if (type === 3) {
+                    goalMesh.position.set(pos.x, 0, pos.z);
+                }
+            }
+        }
+
+        // Snap camera instantly to start position
+        camera.position.set(playerMesh.position.x, CAM_HEIGHT, playerMesh.position.z + CAM_Z_OFFSET);
+        camera.lookAt(playerMesh.position.x, 0, playerMesh.position.z);
+
+        // Tutorial hints logic
+        const tutText = document.getElementById('tutorial-text');
+        const tutDiv = document.getElementById('in-game-tutorial');
+
+        if (level === 1) {
+            tutText.innerText = "NAVIGATE TO THE PURPLE BEACON";
+            tutDiv.classList.remove('opacity-0');
+            setTimeout(() => tutDiv.classList.add('opacity-0'), 5000);
+        }
+
+        // Auto-pulse on level start so player sees the layout immediately
+        setTimeout(() => triggerPulse(true), 500);
+    }
+
+    function triggerPulse(isAuto = false) {
+        if (state.current !== GameState.PLAYING) return;
+        initAudio();
+
+        if (!isAuto) {
+            state.pulsesThisLevel++;
+            updateHUD();
+        }
+
+        playSound('pulse');
+
+        // Button visual feedback
+        const btn = document.getElementById('pulse-btn');
+        if(btn) {
+            btn.classList.add('active-pulse');
+            setTimeout(() => btn.classList.remove('active-pulse'), 150);
+        }
+
+        // Create pulse data object
+        state.pulses.push({
+            origin: playerMesh.position.clone(),
+            radius: 0.1,
+            maxRadius: Math.max(state.gridWidth, state.gridHeight) * config.cellSize * 1.5,
+            speed: config.pulseSpeed
+        });
+    }
+
+    function createTrailMark(pos) {
+        const trail = new THREE.Mesh(geometries.trail, materials.trail.clone());
+        trail.position.set(pos.x, -config.wallHeight/2 + 0.05, pos.z);
+        trail.rotation.x = -Math.PI / 2;
+        scene.add(trail);
+        trails.push({ mesh: trail, createdAt: Date.now() });
+
+        // Keep trail short to avoid clutter
+        if(trails.length > 15) {
+            const old = trails.shift();
+            scene.remove(old.mesh);
+        }
+    }
+
+    function attemptMove(dx, dy) {
+        if (state.isMoving || state.current !== GameState.PLAYING) return;
+        initAudio();
+
+        // Note: Camera looks down Negative Z.
+        // Up/W = Negative Z (dy=-1). Down/S = Positive Z (dy=1).
+        const newX = state.playerPos.x + dx;
+        const newY = state.playerPos.y + dy;
+
+        // Bounds check
+        if (newX < 0 || newX >= state.gridWidth || newY < 0 || newY >= state.gridHeight) return;
+
+        // Wall collision check
+        if (state.maze[newY][newX] === 1) {
+            playSound('bump');
+            const pos = getWorldPos(newX, newY);
+
+            // Flash the specific wall red
+            for(let w of walls) {
+                if (Math.abs(w.mesh.position.x - pos.x) < 0.1 && Math.abs(w.mesh.position.z - pos.z) < 0.1) {
+                    w.material.opacity = 1.0;
+                    w.material.emissiveIntensity = 2.5;
+                    w.material.color.setHex(0xff2244);
+                    w.material.emissive.setHex(0xff2244);
+                    w.lastLit = Date.now() + 500;
+
+                    // Revert color back to cyan
+                    setTimeout(() => {
+                        if(w.material) {
+                            w.material.color.setHex(0x050510);
+                            w.material.emissive.setHex(0x00e5ff);
+                        }
+                    }, 400);
+                    break;
+                }
+            }
+
+            // Camera shake effect
+            const shakeIntensity = 0.4;
+            camera.position.x += (Math.random() - 0.5) * shakeIntensity;
+            camera.position.z += (Math.random() - 0.5) * shakeIntensity;
+            return;
+        }
+
+        // Valid move
+        playSound('move');
+        state.targetPos = { x: newX, y: newY };
+        state.isMoving = true;
+        state.moveProgress = 0;
+        createTrailMark(playerMesh.position);
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (state.current !== GameState.PLAYING) {
+            // Allow ESC to toggle pause state
+            if (e.key === 'Escape' && (state.current === GameState.PLAYING || state.current === GameState.PAUSED)) {
+                togglePause();
+            }
+            return;
+        }
+        switch(e.key) {
+            case 'ArrowUp': case 'w': case 'W': attemptMove(0, -1); break;
+            case 'ArrowDown': case 's': case 'S': attemptMove(0, 1); break;
+            case 'ArrowLeft': case 'a': case 'A': attemptMove(-1, 0); break;
+            case 'ArrowRight': case 'd': case 'D': attemptMove(1, 0); break;
+            case ' ': triggerPulse(); e.preventDefault(); break;
+            case 'Escape': togglePause(); break;
+        }
+    });
+
+    const setupTouch = (id, action) => {
+        const el = document.getElementById(id);
+        if(el) {
+            el.addEventListener('pointerdown', (e) => { e.preventDefault(); action(); });
+        }
+    };
+
+    setupTouch('btn-up', () => attemptMove(0, -1));
+    setupTouch('btn-down', () => attemptMove(0, 1));
+    setupTouch('btn-left', () => attemptMove(-1, 0));
+    setupTouch('btn-right', () => attemptMove(1, 0));
+    setupTouch('pulse-btn', () => triggerPulse());
+    setupTouch('btn-pause', () => togglePause());
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        composer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    function updateHUD() {
+        document.getElementById('hud-level').innerText = `${state.level}/${MAX_LEVELS}`;
+        document.getElementById('hud-score').innerText = state.score;
+        document.getElementById('hud-pulses').innerText = state.pulsesThisLevel;
+    }
+
+    // Centralized function to manage Modal visibility
+    function setModal(id, show) {
+        const modal = document.getElementById(id);
+        const overlay = document.getElementById('modals');
+
+        if (show) {
+            // Hide all other modals inside the overlay first
+            Array.from(overlay.children).forEach(child => {
+                if (child.id !== id && !child.classList.contains('hidden-ui')) {
+                    child.classList.add('hidden-ui');
+                }
+            });
+
+            overlay.classList.remove('hidden-ui', 'fade-exit', 'fade-exit-active');
+            overlay.style.backgroundColor = "rgba(0,0,0,0.75)"; // Enable backdrop
+
+            modal.classList.remove('hidden-ui', 'fade-exit', 'fade-exit-active');
+            modal.classList.add('fade-enter');
+            void modal.offsetWidth; // trigger reflow
+            modal.classList.add('fade-enter-active');
+            setTimeout(() => modal.classList.remove('fade-enter', 'fade-enter-active'), 300);
+        } else {
+            modal.classList.add('fade-exit', 'fade-exit-active');
+            overlay.style.backgroundColor = "rgba(0,0,0,0)"; // Fade backdrop
+            setTimeout(() => {
+                modal.classList.add('hidden-ui');
+                modal.classList.remove('fade-exit', 'fade-exit-active');
+                overlay.classList.add('hidden-ui'); // Hide container entirely
+            }, 300);
+        }
+    }
+
+    function startGame() {
+        initAudio();
+        setModal('modal-menu', false);
+
+        document.getElementById('hud').classList.remove('opacity-0');
+        document.getElementById('touch-controls').classList.remove('opacity-0');
+        document.getElementById('desktop-hint').classList.remove('opacity-0');
+        setTimeout(() => document.getElementById('desktop-hint').classList.add('opacity-0'), 6000);
+
+        // Hard reset stats
+        state.level = 1;
+        state.score = 0;
+        state.current = GameState.PLAYING;
+        initLevel(state.level);
+    }
+
+    function restartLevel() {
+        setModal('modal-pause', false);
+        state.current = GameState.PLAYING;
+        initLevel(state.level); // Re-inits the same level
+    }
+
+    function togglePause() {
+        if (state.current === GameState.PLAYING) {
+            state.current = GameState.PAUSED;
+            setModal('modal-pause', true);
+        } else if (state.current === GameState.PAUSED) {
+            state.current = GameState.PLAYING;
+            setModal('modal-pause', false);
+            state.lastTime = performance.now(); // Prevents delta-time jump
+        }
+    }
+
+    function abortToMenu() {
+        setModal('modal-pause', false);
+        setModal('modal-victory', false);
+        document.getElementById('hud').classList.add('opacity-0');
+        document.getElementById('touch-controls').classList.add('opacity-0');
+        setTimeout(() => setModal('modal-menu', true), 300);
+        state.current = GameState.MENU;
+    }
+
+    function handleLevelComplete() {
+        state.current = GameState.TRANSITION;
+        playSound('win');
+
+        const baseScore = state.level * 1000;
+        // Generous par for pulses
+        const parPulses = Math.max(1, Math.floor((state.gridWidth + state.gridHeight) / 4));
+        let pulsePenalty = Math.max(0, (state.pulsesThisLevel - parPulses) * 150);
+        let memoryBonus = Math.max(0, 2000 - pulsePenalty);
+
+        state.score += baseScore + memoryBonus;
+        updateHUD();
+
+        if (state.level >= MAX_LEVELS) {
+            // GAME BEATEN
+            document.getElementById('final-score').innerText = state.score;
+            setTimeout(() => setModal('modal-victory', true), 1000);
+        } else {
+            // NEXT LEVEL
+            document.getElementById('summary-pulses').innerText = state.pulsesThisLevel;
+            document.getElementById('summary-bonus').innerText = `+${memoryBonus}`;
+            document.getElementById('summary-score').innerText = state.score;
+            setTimeout(() => setModal('modal-level-complete', true), 800);
+        }
+    }
+
+    // Wire up buttons
+    document.getElementById('btn-start').addEventListener('click', startGame);
+    document.getElementById('btn-resume').addEventListener('click', togglePause);
+    document.getElementById('btn-restart-level').addEventListener('click', restartLevel);
+    document.getElementById('btn-quit').addEventListener('click', abortToMenu);
+    document.getElementById('btn-victory-menu').addEventListener('click', abortToMenu);
+
+    document.getElementById('btn-play-again').addEventListener('click', () => {
+        setModal('modal-victory', false);
+        startGame(); // Full restart
+    });
+
+    document.getElementById('btn-next-level').addEventListener('click', () => {
+        setModal('modal-level-complete', false);
+        state.level++;
+        initLevel(state.level);
+        state.current = GameState.PLAYING;
+    });
+
+    // Settings toggles
+    document.getElementById('toggle-audio').addEventListener('change', (e) => state.settings.audio = e.target.checked);
+    document.getElementById('toggle-bloom').addEventListener('change', (e) => {
+        state.settings.bloom = e.target.checked;
+        bloomPass.strength = state.settings.bloom ? 2.0 : 0.0;
+    });
+
+    function update(time) {
+        requestAnimationFrame(update);
+
+        if (state.current === GameState.PAUSED) {
+            state.lastTime = time;
+            composer.render();
+            return;
+        }
+
+        const dt = Math.min((time - state.lastTime) / 1000, 0.1);
+        state.lastTime = time;
+
+        if (state.current === GameState.PLAYING || state.current === GameState.TRANSITION) {
+
+            // Smooth Grid Movement
+            if (state.isMoving) {
+                state.moveProgress += dt * state.moveSpeed;
+                if (state.moveProgress >= 1.0) {
+                    state.moveProgress = 1.0;
+                    state.isMoving = false;
+                    state.playerPos.x = state.targetPos.x;
+                    state.playerPos.y = state.targetPos.y;
+
+                    // Check Goal
+                    if (state.maze[state.playerPos.y][state.playerPos.x] === 3 && state.current === GameState.PLAYING) {
+                        handleLevelComplete();
+                    }
+                }
+
+                const start = getWorldPos(state.playerPos.x, state.playerPos.y);
+                const end = getWorldPos(state.targetPos.x, state.targetPos.y);
+
+                playerMesh.position.x = start.x + (end.x - start.x) * state.moveProgress;
+                playerMesh.position.z = start.z + (end.z - start.z) * state.moveProgress;
+            }
+
+            // Smooth Camera Tracking (Top-Down Angled)
+            const camTargetX = playerMesh.position.x;
+            const camTargetZ = playerMesh.position.z + CAM_Z_OFFSET;
+
+            camera.position.x += (camTargetX - camera.position.x) * 5.0 * dt;
+            camera.position.z += (camTargetZ - camera.position.z) * 5.0 * dt;
+
+            // Camera always looks directly at the player
+            const lookTarget = new THREE.Vector3(playerMesh.position.x, 0, playerMesh.position.z);
+            camera.lookAt(lookTarget);
+
+            // Idle Animations
+            goalMesh.rotation.y += 2.0 * dt;
+            goalMesh.rotation.z += 1.0 * dt;
+            goalMesh.position.y = Math.sin(time * 0.003) * 0.3 + 0.5;
+
+            // Fading trails
+            const now = Date.now();
+            trails.forEach(t => {
+                const age = now - t.createdAt;
+                if(age > 2000) t.mesh.material.opacity = Math.max(0, 0.4 - ((age-2000)/1000)*0.4);
+            });
+
+            // Pulse Expansion & Collision
+            const currentFadeDelay = Math.max(1.5, config.fadeDelayBase - (state.level * 0.2)) * 1000;
+            const fadeDuration = 1500; // Time it takes to go from lit to dark
+
+            for (let i = state.pulses.length - 1; i >= 0; i--) {
+                let p = state.pulses[i];
+                p.radius += p.speed * dt;
+
+                for (let w of walls) {
+                    const dist = w.mesh.position.distanceTo(p.origin);
+                    // If wall is within the leading edge and trailing edge of the pulse
+                    if (dist < p.radius && dist > p.radius - config.pulseRingWidth) {
+                        w.material.opacity = 0.9;
+                        w.material.emissiveIntensity = 1.5;
+                        w.lastLit = now;
+                    }
+                }
+
+                if (p.radius > p.maxRadius) state.pulses.splice(i, 1);
+            }
+
+            // Wall Fading Logic
+            for (let w of walls) {
+                if (w.lastLit > 0) {
+                    const timeSinceLit = now - w.lastLit;
+                    if (timeSinceLit > currentFadeDelay) {
+                        // Calculate fade percentage
+                        let fadeRatio = 1.0 - ((timeSinceLit - currentFadeDelay) / fadeDuration);
+                        fadeRatio = Math.max(0, fadeRatio);
+
+                        w.material.opacity = fadeRatio * 0.9;
+                        w.material.emissiveIntensity = fadeRatio * 1.5;
+
+                        if (fadeRatio === 0) w.lastLit = 0;
+                    }
+                }
+            }
+        }
+
+        composer.render();
+    }
+
+    // Initialize state and start loop
+    state.lastTime = performance.now();
+    setModal('modal-menu', true); // Ensure menu is visible on load
+    requestAnimationFrame(update);
+
+</script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <!-- Background Gradient -->
+    <radialGradient id="bg-grad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#0a1228"/>
+      <stop offset="60%" stop-color="#030611"/>
+      <stop offset="100%" stop-color="#010205"/>
+    </radialGradient>
+
+    <!-- Pulse Glow Filter -->
+    <filter id="cyan-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur1"/>
+      <feGaussianBlur stdDeviation="18" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="purple-glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur1"/>
+      <feGaussianBlur stdDeviation="20" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Linear Gradients -->
+    <linearGradient id="cyan-stroke" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ffff"/>
+      <stop offset="100%" stop-color="#0088ff"/>
+    </linearGradient>
+
+    <linearGradient id="purple-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff00ff"/>
+      <stop offset="100%" stop-color="#8800ff"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="512" height="512" rx="112" fill="url(#bg-grad)"/>
+
+  <!-- Maze Labyrinth Grid Lines -->
+  <g stroke="#00ffff" stroke-width="3" stroke-linecap="round" opacity="0.25">
+    <path d="M 96,96 L 416,96 L 416,416 L 96,416 Z"/>
+    <path d="M 160,96 L 160,288 L 288,288 L 288,160 L 352,160"/>
+    <path d="M 96,224 L 224,224 L 224,352 L 352,352 L 352,224"/>
+    <path d="M 224,96 L 224,160 L 416,160"/>
+    <path d="M 160,352 L 160,416"/>
+  </g>
+
+  <!-- Lit Maze Walls (Revealed by Echo Pulse) -->
+  <g stroke="url(#cyan-stroke)" stroke-width="6" stroke-linecap="round" filter="url(#cyan-glow)">
+    <path d="M 160,288 L 288,288 L 288,160"/>
+    <path d="M 224,224 L 224,352 L 352,352"/>
+    <path d="M 160,160 L 160,224"/>
+  </g>
+
+  <!-- Expanding Sonar Pulse Rings -->
+  <circle cx="160" cy="352" r="45" fill="none" stroke="#00ffff" stroke-width="2.5" opacity="0.8" filter="url(#cyan-glow)"/>
+  <circle cx="160" cy="352" r="90" fill="none" stroke="#00ffff" stroke-width="2" opacity="0.5" filter="url(#cyan-glow)"/>
+  <circle cx="160" cy="352" r="145" fill="none" stroke="#00ffff" stroke-width="1.5" opacity="0.3" stroke-dasharray="8 6" filter="url(#cyan-glow)"/>
+  <circle cx="160" cy="352" r="200" fill="none" stroke="#00ffff" stroke-width="1" opacity="0.15" stroke-dasharray="12 8"/>
+
+  <!-- Player Node (Emitter) -->
+  <circle cx="160" cy="352" r="16" fill="#ffffff" filter="url(#cyan-glow)"/>
+  <circle cx="160" cy="352" r="8" fill="#00ffff"/>
+
+  <!-- Goal Beacon Diamond (Purple Target) -->
+  <g transform="translate(352, 160)" filter="url(#purple-glow)">
+    <polygon points="0,-24 20,0 0,24 -20,0" fill="url(#purple-grad)"/>
+    <polygon points="0,-16 13,0 0,16 -13,0" fill="#ffffff" opacity="0.7"/>
+    <circle cx="0" cy="0" r="5" fill="#ffffff"/>
+  </g>
+</svg>
